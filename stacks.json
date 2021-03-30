@@ -1,13 +1,13 @@
 {
-   "title": "RobinIo Operator",
-   "description": "RobinIo Operator",
+   "title": "Robin Cloud Native Storage",
+   "description": "Robin Cloud Native Storage",
    "logo": "_images/logo.png",
    "enabled": true,
    "category_label": [
      "Operators"
    ],
    "document": "data-logging-stack",
-   "stack_id": "robinio-operator",
+   "stack_id": "robin-operator",
    "type": "stack",
    "categories": [
      "Database"
