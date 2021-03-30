@@ -1,6 +1,6 @@
 <h1 align="center">RobinIo Operator</h1> 
 
-![Logo](_images/logo.PNG)
+![Logo](_images/logo.png)
 
 
 
