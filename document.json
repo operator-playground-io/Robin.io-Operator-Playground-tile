@@ -1,0 +1,40 @@
+{
+  "name": "RobinIo Operator",
+  "description": "RobinIo Operator",
+  "logo": "_images/RobinIo-logo-3.png",
+  "has_supporting_content": true,
+  "stack_id": "RobinIo-operator",
+  "type": "stack",
+  "categories": ["Database"],
+  "platform": "Kubernetes",
+  "cover": "cover.md",
+  "meta": {
+    "Database": ["RobinIo"],
+    "Type":[
+         "Operators"
+      ],
+    "Install time": ["5 minutes"],
+    "Categories": [
+      "Database"
+    ]
+  },
+"deployment_information": {
+  "Operator Project": "N/A",
+  "Deployment Namespace": "my-robinio-operator-app"
+},
+  "commands": [
+    
+    {
+      "description": "Install Operator",
+      "exec": "kubectl create -f https://operatorhub.io/install/robin-operator.yaml"
+    }
+
+],
+  "display": [
+    {
+      "name": "Developer Dashboard",
+      "url": "##DNS.host##/codeserver",
+      "enabled": true
+    }
+  ]
+}

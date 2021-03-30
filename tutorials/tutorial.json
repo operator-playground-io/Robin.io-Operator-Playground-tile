@@ -1,0 +1,23 @@
+{
+   "name":"RobinIo Operator Tutorial",
+   "appLayout":"accordion",
+   "appTheme":"g90",
+   "footer":"footer.md",
+   "tutorials":[
+      
+       {
+         "description":"Learn how to verify that the RobinIo Operator has been properly installed in the namespace.",
+         "duration":"10 min",
+         "tutorial_name":"operator-status.md",
+         "title":"1. RobinIo Operator installation verification"
+      }
+	
+   ],
+   "usefulLinks":[
+      {
+         "title":"RobinIo Operator",
+         "description":"RobinIo Operator",
+         "url":"https://operatorhub.io/operator/robin-operator"
+      }
+   ]
+}

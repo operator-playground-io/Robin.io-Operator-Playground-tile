@@ -1,0 +1,23 @@
+{
+   "title": "RobinIo Operator",
+   "description": "RobinIo Operator",
+   "logo": "_images/logo.png",
+   "enabled": true,
+   "category_label": [
+     "Operators"
+   ],
+   "document": "data-logging-stack",
+   "stack_id": "robinio-operator",
+   "type": "stack",
+   "categories": [
+     "Database"
+   ],
+   "is_certified": false,
+   "has_support": true,
+   "has_dataset": false,
+   "has_api": false,
+   "git_url": "https://github.com/operator-playground-io/Robin.io-Operator-Playground-tile",
+   "git_commit": "d97ea3eb1d7b6a40fce45b259019fcaf36474bd0",
+   "installTime": "5 minutes",
+   "isStacksSaved": true
+ }
