@@ -8,8 +8,8 @@
        {
          "description":"Learn how to verify that the RobinIo Operator has been properly installed in the namespace.",
          "duration":"10 min",
-         "tutorial_name":"operator-status.md",
-         "title":"1. RobinIo Operator installation verification"
+         "tutorial_name":"RobinIo Install Guide.md",
+         "title":"1. RobinIo Operator installation"
       }
 	
    ],
