@@ -19,5 +19,6 @@
          "description":"RobinIo Operator",
          "url":"https://operatorhub.io/operator/robin-operator"
       }
-   ]
+   ],
+   "support": []
 }
