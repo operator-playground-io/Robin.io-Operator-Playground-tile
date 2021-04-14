@@ -133,13 +133,6 @@ tar -xvf postgresql-*.tgz
 cd postgresql
 ```
 
-
-Untar the postgresql chart files with following command.
-
-```execute
-tar -xvf postgresql-*.tgz
-```
-
 Using the below Helm command, we will deploy a PostgreSQL instance. (postgresql is the directory where the modified statefulset.yaml file is present and movies is the name of the helm release).
 
 ```execute
