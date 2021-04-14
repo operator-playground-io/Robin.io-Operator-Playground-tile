@@ -129,9 +129,7 @@ helm fetch ibm-community/postgresql
 tar -xvf postgresql-*.tgz
 ```
 
-```execute
-cd postgresql
-```
+
 
 Using the below Helm command, we will deploy a PostgreSQL instance. (postgresql is the directory where the modified statefulset.yaml file is present and movies is the name of the helm release).
 
@@ -226,7 +224,7 @@ public | movies | table | postgres
 
 We need some sample data to perform operations on. Let’s add 9 movies to the “movies” table.
 ```execute
-postgres=# INSERT INTO movies (movieid, year, title, genre) VALUES
+INSERT INTO movies (movieid, year, title, genre) VALUES
 ('tt0360556', 2018, 'Fahrenheit 451', 'Drama'),
 ('tt0365545', 2018, 'Nappily Ever After', 'Comedy'),
 ('tt0427543', 2018, 'A Million Little Pieces','Drama'),
@@ -330,7 +328,7 @@ from movies where title = 'June 9';
 Let’s verify the movie titled “June 9” has been deleted.
 
 ```execute
-testdb=# SELECT * from movies;
+SELECT * from movies;
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -556,7 +554,7 @@ kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace
 
 If you don't see a command prompt, try pressing enter.
 ```execute
-testdb=# SELECT * from movies;
+SELECT * from movies;
 ```
 ```
   movieid  | year |                 title                 |    genre
