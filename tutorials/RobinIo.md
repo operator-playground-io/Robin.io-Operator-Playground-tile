@@ -324,7 +324,7 @@ Let’s verify the movie titled “June 9” has been deleted.
 ```execute
 testdb=# SELECT * from movies;
 ```
----
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -336,7 +336,7 @@ tt0859635 | 2018 | Super Troopers 2                      | Comedy
 tt0862930 | 2018 | Dukun                                 | Horror
 tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
 (8rows)
----
+```
 
 Let’s run the following command to see the available snapshots:
 
@@ -611,8 +611,8 @@ Let’s attach this repo to our app so that we can backup its snapshots there:
 robin app attach-repo movies pgsqlbackups --wait
 ```
 Let’s confirm that our secondary storage repository is successfully attached to app:
-execute
-```
+
+```execute
 robin app info movies
 ```
 You should see an output similar to the following:
@@ -810,8 +810,10 @@ Connect to “testdb” and check record and you should see an output similar to
 kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
 If you don't see a command prompt, try pressing enter.
-
+```execute
 testdb=# select * from movies;
+```
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
