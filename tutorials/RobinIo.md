@@ -102,11 +102,11 @@ In the same output above notice the field ‘Master _ Ip’ and use it to setup 
 robin client add-context 169.62.52.194 --set-current`
 ```
 
-```
+```execute
 robin login admin --password Robin123
 ```
 
-```
+```execute
 robin namespace add demo
 ```
 Let’s add a stable Helm repository to pull Helm charts from. For this tutorial, we will use the IBM Community Helm repo. This repository has Helm charts designed to run on OpenShift.
@@ -216,11 +216,13 @@ postgres=# CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);
 ```execute
 postgres=# \d
 ```
-        List of relations
+List of relations
+```
 Schema |  Name  | Type  |  Owner
 --------+--------+-------+----------
 public | movies | table | postgres
 (1 row)
+```
 
 We need some sample data to perform operations on. Let’s add 9 movies to the “movies” table.
 ```execute
@@ -239,6 +241,7 @@ Let’s verify data was added to the “movies” table by running the following
 
 ```execute
 postgres=# SELECT * from movies;
+```
 ```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
@@ -314,13 +317,14 @@ kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace
 ```
 
 ```execute
-testdb=# DELETE from movies where title = 'June 9';
+from movies where title = 'June 9';
 ```
 Let’s verify the movie titled “June 9” has been deleted.
 
 ```execute
 testdb=# SELECT * from movies;
 ```
+---
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -332,7 +336,7 @@ tt0859635 | 2018 | Super Troopers 2                      | Comedy
 tt0862930 | 2018 | Dukun                                 | Horror
 tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
 (8rows)
-
+---
 
 Let’s run the following command to see the available snapshots:
 
@@ -352,10 +356,12 @@ Number of archived/failed backups : 0
 ```
 
 Query:
--------
+```
 {'selectors': [], 'namespace': 'demo', 'apps': ['helm/movies@demo'], 'resources': []}
+```
 
 Snapshots:
+```
 +----------------------------------+--------------------+-------------------+--------+----------------------+
 | Id                               | Name               | Description       | State  | Creation Time        |
 +----------------------------------+--------------------+-------------------+--------+----------------------+
@@ -385,8 +391,10 @@ If you don't see a command prompt, try pressing enter.
 psql (11.7)
 Type "help" for help.
 
-testdb=#
+```execute
 testdb=# SELECT * from movies;
+```
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -459,8 +467,10 @@ To verify we have successfully created a clone of our PostgreSQL database, run t
 kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
 If you don't see a command prompt, try pressing enter.
-
+```execute
 testdb=# SELECT * from movies;
+```
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -484,7 +494,10 @@ testdb=# DELETE from movies where title = 'Super Troopers 2';
 Let’s verify the movie has been deleted. You should see an output similar to the following with 8 movies.
 
 ```
+```execute
 testdb=# SELECT * from movies;
+```
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -517,8 +530,10 @@ kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace
 
 ```
 If you don't see a command prompt, try pressing enter.
-
+```execute
 testdb=# SELECT * from movies;
+```
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -540,8 +555,8 @@ To see a list of all clones created by Robin run the following command:
 robin app list --app-types CLONE`
 ```
 Now let’s delete the clone. Clone is just any other Robin app so it can be deleted using the native ‘app delete’ command show below.
-execute
-```
+
+```execute
 robin app delete movies-clone -y --force --wait
 ```
 The output should be similar to the following:
@@ -614,16 +629,18 @@ Number of archived/failed backups : 0
 ```
 
 Query:
--------
+```
 {'namespace': 'demo', 'apps': ['helm/movies@demo'], 'resources': [], 'selectors': []}
-
+```
+```
 Repos:
 +--------------+-------------+---------------+------------+
 | Name         | Bucket      | Path          | Permission |
 +--------------+-------------+---------------+------------+
 | pgsqlbackups | robin-pgsql | pgsqlbackups/ | readwrite  |
 +--------------+-------------+---------------+------------+
-
+```
+```
 Snapshots:
 +----------------------------------+--------------------+-------------------+--------+----------------------+
 | Id                               | Name               | Description       | State  | Creation Time        |
@@ -681,14 +698,16 @@ kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace
 If you don't see a command prompt, try pressing enter.
 psql (11.7)
 Type "help" for help.
-
+```execute
 testdb=# DELETE from movies;
+```
 DELETE 9
+```
 testdb=# SELECT * from movies;
 movieid | year | title | genre
 ---------+------+-------+-------
 (0 rows)
-
+```
 We will now use our backed-up snapshot on S3 to restore data we just lost.
 
 Now let’s restore snapshot from the backup in cloud and rollback our application to that snapshot via the following command:
@@ -724,8 +743,10 @@ Let’s verify all 9 rows are restored to the “movies” table by running the 
 kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
 If you don't see a command prompt, try pressing enter.
-
+```execute
 testdb=# SELECT * from movies;
+```
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
