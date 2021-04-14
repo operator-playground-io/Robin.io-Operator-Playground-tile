@@ -313,9 +313,17 @@ We now have a snapshot of our entire database with information of all 9 movies.
 ###Rollback the PostgreSQL database
 
 We have 9 rows in our “movies” table. To test the snapshot and rollback functionality, let’s simulate a user error by deleting a movie from the “movies” table.
+
+```execute
+export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
+```
+
+```execute
+export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+```
  
 ```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
+kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
 ```
 
 ```execute
@@ -323,7 +331,7 @@ kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace
 ```
 
 ```execute
-from movies where title = 'June 9';
+DELETE from movies where title = 'June 9';
 ```
 Let’s verify the movie titled “June 9” has been deleted.
 
@@ -345,7 +353,7 @@ tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
 ```
 
 ```execute
-\q;
+\q
 ```
 
 Let’s run the following command to see the available snapshots:
@@ -394,7 +402,15 @@ Job:  136 Name: K8SApplicationRollback State: COMPLETED       Error: 0
 To verify we have rolled back to 9 movies in the “movies” table, run the following command.
 
 ```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
+export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
+```
+
+```execute
+export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+```
+ 
+```execute
+kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
 ```
 If you don't see a command prompt, try pressing enter.
 
@@ -435,7 +451,7 @@ Robin clones are ready-to-use “thin copies” of the entire app/database, not 
 
 To create a clone from the existing snapshot created above, run the following command. Use the snapshot id we retrieved above.
 
-```execute
+```copy
 robin app create from-snapshot movies-clone Your_Snapshot_ID --wait
 ```
 You should see output similar to the following:
@@ -478,8 +494,17 @@ export POSTGRES_PASSWORD=$(kubectl get secret movies-clone-movies-postgresql -o 
 To verify we have successfully created a clone of our PostgreSQL database, run the following command. You should see an output similar to the following:
 
 ```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
+export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
 ```
+
+```execute
+export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+```
+ 
+```execute
+kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
+```
+
 ```execute
 \c testdb;
 ```
@@ -544,8 +569,15 @@ To verify that our PostgreSQL database is unaffected by changes to the clone, ru
 Let’s connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
 ```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
+export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
+```
 
+```execute
+export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+```
+ 
+```execute
+kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
 ```
 
 ```execute
@@ -572,7 +604,7 @@ tt0933876 | 2018 | June 9                                | Horror
 ```
 This means we can work on the original PostgreSQL database and the cloned database simultaneously without affecting each other. This is valuable for collaboration across teams where each team needs to perform unique set of operations.
 ```execute
-\q;
+\q
 ```
 To see a list of all clones created by Robin run the following command:
 
@@ -594,7 +626,7 @@ Job:  138 Name: K8SAppDelete         State: FINALIZED       Error: 0
 Job:  138 Name: K8SAppDelete         State: COMPLETED       Error: 0
 ```
 ```execute
-\q;
+\q
 ```
 ###Backup the PostgreSQL Database to AWS S3
 
