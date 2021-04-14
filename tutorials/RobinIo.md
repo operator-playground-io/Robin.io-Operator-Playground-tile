@@ -1,4 +1,4 @@
-**Step 1: ** Confirm that OpenShift cluster is up and running.
+###Confirm that OpenShift cluster is up and running.
 
 ```execute
 kubectl get nodes
@@ -6,11 +6,10 @@ kubectl get nodes
 You should see an output similar to below, with the status of each node marked as Ready 
 
 ```
-kubectl get nodes
 NAME                                                      STATUS   ROLES    AGE   VERSION
 event-k8s-ibm-operators-playground-ycitju.softlayer.com   Ready    master   18h   v1.16.0
 ```
-**Step 2:** Confirm that Robin is up and running. Run the following command to verify that Robin is ready.
+###Confirm that Robin is up and running. Run the following command to verify that Robin is ready.
 
 ```execute
 kubectl get robincluster -n robinio
@@ -18,7 +17,6 @@ kubectl get robincluster -n robinio
 You should see an output similar to below.
 
 ```
-[demo@ocp-svc ~]# oc get robincluster -n robinio
 NAME    AGE
 robin   12h
 ```
@@ -29,8 +27,7 @@ kubectl describe robincluster -n robinio
 ```
 You should see an output similar to below:
 
-```
-[demo@ocp-svc ~]# oc describe robinclusters -n robinio                                                                                                                                                                                                                                                             [33/48]
+```                                                                                                                                                                           
 Name:         robin
 Namespace:    robinio
 Labels:       app.kubernetes.io/instance=robin
@@ -137,34 +134,16 @@ cd postgresql
 ```
 
 
-Untar the postgresql chart files and update the statefulset.yaml with the below values to allow the container to run under privileged SCC
+Untar the postgresql chart files with following command.
 
+```execute
+tar -xvf postgresql-*.tgz
 ```
-containers:
-  - name: {{ template "postgresql.fullname" . }}
-    image: {{ template "postgresql.image" . }}
-    imagePullPolicy: "{{ .Values.image.pullPolicy }}"
-    {{- if .Values.resources }}
-    resources: {{- toYaml .Values.resources | nindent 12 }}
-    {{- end }}
-    {{- if .Values.securityContext.enabled }}
-    securityContext:
-      privileged: true
-      readOnlyRootFilesystem: false
-      allowPrivilegeEscalation: true
-      runAsNonRoot: true
-      capabilities:
-        add: ["SYS_ADMIN"]
-    {{- end }}
-```
-
-
-
 
 Using the below Helm command, we will deploy a PostgreSQL instance. (postgresql is the directory where the modified statefulset.yaml file is present and movies is the name of the helm release).
 
 ```execute
-helm install movies postgresql --set persistence.storageClass=robin,persistence.useDynamicProvisioning=true --namespace demo --set postgresqlDataDir=/bitnami/postgresql,persistence.mountPath=/bitnami/postgresql/,volumePermissions.enabled=true,volumePermissions.securityContext.runAsUser=1001
+helm install movies ./postgresql -n demo --set persistence.storageClass=robin,persistence.useDynamicProvisioning=true
 ```
 Run the following command to verify our database called “movies” is deployed and all relevant Kubernetes resources are ready.
 
@@ -174,9 +153,8 @@ helm list -n demo
 You should be able to see an output showing the status of your Postgres database.
 
 ```
-[demo@ocp-svc ~]#  helm list
-NAME    NAMESPACE         REVISION        UPDATED                         STATUS          CHART                 APP VERSION
-movies  demo            1               2021-04-13 03:38:48.111777446 -0500 CDT deployed        postgresql-3.18.3       10.7.0
+NAME    NAMESPACE         REVISION        UPDATED                                       STATUS            CHART                 APP VERSION
+movies  demo              1               2021-04-13 03:38:48.111777446 -0500 CDT       deployed        postgresql-3.18.3       10.7.0
 ```
 You would also want to make sure Postgres database services are running before proceeding further. Run the following command to verify the services are running.
 
@@ -186,18 +164,17 @@ kubectl get service -n demo | grep movies
 You should see an output similar to the following.
 
 ```
-[demo@ocp-svc ~]# oc get service |grep movies
 movies-postgresql            ClusterIP   None            <none>        5432/TCP         2m55s
 movies-postgresql-headless   ClusterIP   None            <none>        5432/TCP         2m55s
 ```
 Now that we know the PostgreSQL services are up and running, let’s get Service IP address of our database.
 
-```
+```execute
 export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
 ```
 Let’s get the password of our PostgreSQL database from Kubernetes Secret
 
-```
+```execute
 export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
 ```
 
@@ -205,8 +182,9 @@ export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql
 
 Let’s create a database “testdb” and connect to “testdb”.
 
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
-[demo@ocp-svc ~]# kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres -d postgres -p 5432
 If you don't see a command prompt, try pressing enter.
 
 postgres=# CREATE DATABASE testdb;
@@ -253,8 +231,9 @@ postgres=# INSERT INTO movies (movieid, year, title, genre) VALUES
 ```
 Let’s verify data was added to the “movies” table by running the following command. You should see an output with the “movies” table and the nine rows in it as follows:
 
-```
+```execute
 postgres=# SELECT * from movies;
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -282,7 +261,6 @@ robin app info movies --status
 You should see an output similar to this:
 
 ```
-[demo@ocp-svc ~]# robin app info --status  movies
 +-----------------------+----------------------------+--------+---------+
 | Kind                  | Name                       | Status | Message |
 +-----------------------+----------------------------+--------+---------+
@@ -301,18 +279,17 @@ If you make a mistake, such as unintentionally deleting important data, you may 
 
 Robin lets you snapshot not just the storage volumes (PVCs) but the entire database application including all its resources such as Pods, StatefulSets, PVCs, Services, ConfigMaps etc. with a single command. To create a snapshot, run the following command.
 
-```
+```execute
 robin snapshot create movies --snapname snap9movies --desc "contains 9 movies" --wait
 ```
 Let’s verify we have successfully created the snapshot.
 
-```
+```execute
 robin snapshot list --app movies
 ```
 You should see an output similar to this:
 
 ```
-[demo@ocp-svc ~]# robin snapshot list  --app movies
 +----------------------------------+--------+----------+----------+--------------------+
 | Snapshot ID                      | State  | App Name | App Kind | Snapshot name      |
 +----------------------------------+--------+----------+----------+--------------------+
@@ -327,16 +304,17 @@ We now have a snapshot of our entire database with information of all 9 movies.
 We have 9 rows in our “movies” table. To test the snapshot and rollback functionality, let’s simulate a user error by deleting a movie from the “movies” table.
  
 ```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres -d testdb -p 5432
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
 
-```
+```execute
 testdb=# DELETE from movies where title = 'June 9';
 ```
 Let’s verify the movie titled “June 9” has been deleted.
 
-```
+```execute
 testdb=# SELECT * from movies;
+```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
 tt0360556 | 2018 | Fahrenheit 451                        | Drama
@@ -348,17 +326,16 @@ tt0859635 | 2018 | Super Troopers 2                      | Comedy
 tt0862930 | 2018 | Dukun                                 | Horror
 tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
 (8rows)
-```
+
 
 Let’s run the following command to see the available snapshots:
 
-```
+```execute
 robin app info movies
 ```
 You should see an output similar to the following. Note the snapshot id, as we will use it in the next command.
 
 ```
-[demo@ocp-svc ~]# robin app info movies
 Name                              : movies
 Kind                              : helm
 State                             : ONLINE
@@ -366,6 +343,7 @@ Number of repos                   : 0
 Number of snapshots               : 1
 Number of usable backups          : 0
 Number of archived/failed backups : 0
+```
 
 Query:
 -------
@@ -380,13 +358,12 @@ Snapshots:
 ```
 Now, let’s rollback to the point where we had 9 movies, including “June 9”, using the snapshot id displayed above via the following command:
 
-```
+```execute
 robin app restore movies --snapshotid Your_Snapshot_ID --wait
 ```
 You should see an output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin app restore movies --snapshotid 13cc8da2031a11eb99a99b354219f676 --wait
 Job:  136 Name: K8SApplicationRollback State: VALIDATED       Error: 0
 Job:  136 Name: K8SApplicationRollback State: PREPARED        Error: 0
 Job:  136 Name: K8SApplicationRollback State: AGENT_WAIT      Error: 0
@@ -394,10 +371,9 @@ Job:  136 Name: K8SApplicationRollback State: COMPLETED       Error: 0
 ```
 To verify we have rolled back to 9 movies in the “movies” table, run the following command.
 
-
-
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
-[demo@ocp-svc ~]# kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres -d testdb -p 5432
 If you don't see a command prompt, try pressing enter.
 
 psql (11.7)
@@ -431,13 +407,13 @@ Robin clones are ready-to-use “thin copies” of the entire app/database, not 
 
 To create a clone from the existing snapshot created above, run the following command. Use the snapshot id we retrieved above.
 
-```
+```execute
 robin app create from-snapshot movies-clone Your_Snapshot_ID --wait
 ```
 You should see output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin app create from-snapshot movies-clone 13cc8da2031a11eb99a99b354219f676 --wait
+
 Job:  137 Name: K8SApplicationClone  State: VALIDATED       Error: 0
 Job:  137 Name: K8SApplicationClone  State: PREPARED        Error: 0
 Job:  137 Name: K8SApplicationClone  State: AGENT_WAIT      Error: 0
@@ -447,14 +423,13 @@ Job:  137 Name: K8SApplicationClone  State: COMPLETED       Error: 0
 
 Let’s verify Robin has cloned all relevant Kubernetes resources.
 
-```
+```execute
 kubectl get all | grep "movies-clone"
 ```
 You should see an output similar to below.
 
 
 ```
-[demo@ocp-svc ~]# oc get all |grep "movies-clone"
 pod/movies-clone-movies-postgresql-0   1/1     Running   0          94s
 service/movies-clone-movies-postgresql            ClusterIP   172.30.149.75    <none>        5432/TCP    109s
 service/movies-clone-movies-postgresql-headless   ClusterIP   None             <none>        5432/TCP    109s
@@ -464,18 +439,19 @@ statefulset.apps/movies-clone-movies-postgresql   1/1     109s
 Notice that Robin automatically clones the required Kubernetes resources, not just storage volumes (PVCs), that are required to stand up a fully-functional clone of our database. After the clone is complete, the cloned database is ready for use.
 
 Get Service IP address of our postgresql database clone, and note the IP address.
-```
+```execute
 export IP_ADDRESS=$(oc get service movies-clone-movies-postgresql -o jsonpath={.spec.clusterIP})`
 ```
 Get Password of our postgresql database clone from Kubernetes Secret
 
-```
+```execute
 export POSTGRES_PASSWORD=$(oc get secret movies-clone-movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
 To verify we have successfully created a clone of our PostgreSQL database, run the following command. You should see an output similar to the following:
 
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
-[demo@ocp-svc ~]# oc run movies-clone-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host movies-clone-movies-postgresql -U postgres -d testdb -p 5432
 If you don't see a command prompt, try pressing enter.
 
 testdb=# SELECT * from movies;
@@ -496,7 +472,7 @@ We have successfully created a clone of our original PostgreSQL database, and th
 
 Now, let’s make changes to the clone and verify the original database remains unaffected by changes to the clone. Let’s delete the movie called “Super Troopers 2”.
 
-```
+```execute
 testdb=# DELETE from movies where title = 'Super Troopers 2';
 ```
 Let’s verify the movie has been deleted. You should see an output similar to the following with 8 movies.
@@ -518,20 +494,22 @@ tt0933876 | 2018 | June 9                                | Horror
 Now, let’s connect to our original PostgreSQL database and verify it is unaffected.
 
 Get Service IP address of our postgresql database.
-```
+```execute
 export IP_ADDRESS=$(oc get service movies-postgresql -o jsonpath={.spec.clusterIP})`
 ```
 Get Password of our original postgre database from Kubernetes Secret.
 
-```
+```execute
 export POSTGRES_PASSWORD=$(oc get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
 To verify that our PostgreSQL database is unaffected by changes to the clone, run the following command.
 
 Let’s connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
+
 ```
-[demo@ocp-svc ~]# oc run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host movies-postgresql -U postgres -d testdb -p 5432
 If you don't see a command prompt, try pressing enter.
 
 testdb=# SELECT * from movies;
@@ -552,18 +530,17 @@ This means we can work on the original PostgreSQL database and the cloned databa
 
 To see a list of all clones created by Robin run the following command:
 
-```
+```execute
 robin app list --app-types CLONE`
 ```
 Now let’s delete the clone. Clone is just any other Robin app so it can be deleted using the native ‘app delete’ command show below.
-
+execute
 ```
 robin app delete movies-clone -y --force --wait
 ```
 The output should be similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin app delete movies-clone -y --force --wait
 Job:  138 Name: K8SAppDelete         State: PROCESSED       Error: 0
 Job:  138 Name: K8SAppDelete         State: PREPARED        Error: 0
 Job:  138 Name: K8SAppDelete         State: AGENT_WAIT      Error: 0
@@ -585,24 +562,22 @@ Before we proceed, we need to create an S3 bucket and get access parameters for 
 
 Let’s first register an AWS repo with Robin via the following command:
 
-```
+```execute
  robin repo register pgsqlbackups s3://robin-pgsql/pgsqlbackups awstier.json readwrite --wait
 ```
 This following should be displayed when the above command is run:
 
 ```
-[demo@ocp-svc ~]# robin repo register pgsqlbackups s3://robin-pgsql/pgsqlbackups awstier.json readwrite --wait
 Job:  139 Name: StorageRepoAdd       State: PROCESSED       Error: 0
 Job:  139 Name: StorageRepoAdd       State: COMPLETED       Error: 0
 ```
 Let’s confirm that our secondary storage repository is successfully registered:
 
-```
+```execute
 robin repo list
 ```
 
 ```
-[demo@ocp-svc ~]# robin repo list
 +--------------+--------+----------------------+--------------+-------------+---------------+-------------+
 | Name         | Type   | Owner/Tenant         | BackupTarget | Bucket      | Path          | Permissions |
 +--------------+--------+----------------------+--------------+-------------+---------------+-------------+
@@ -611,18 +586,17 @@ robin repo list
 ```
 Let’s attach this repo to our app so that we can backup its snapshots there:
 
-```
+```execute
 robin app attach-repo movies pgsqlbackups --wait
 ```
 Let’s confirm that our secondary storage repository is successfully attached to app:
-
+execute
 ```
 robin app info movies
 ```
 You should see an output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin app info movies
 Name                              : movies
 Kind                              : helm
 State                             : ONLINE
@@ -630,6 +604,8 @@ Number of repos                   : 1
 Number of snapshots               : 1
 Number of usable backups          : 0
 Number of archived/failed backups : 0
+
+```
 
 Query:
 -------
@@ -651,13 +627,12 @@ Snapshots:
 ```
 Lets take the backup of the snapshot to the remote S3 repo.
 
-```
+```execute
 robin backup create movies pgsqlbackups --snapshotid Your_snaphsot_ID --backupname Name_of_Backup --wait
 ```
 You should see an output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin backup create movies pgsqlbackups --snapshotid 13cc8da2031a11eb99a99b354219f676 --backupname movies_backup --wait
 Creating app backup 'movies_backup' from snapshot '13cc8da2031a11eb99a99b354219f676'
 Job:  142 Name: K8SApplicationBackup State: PROCESSED       Error: 0
 Job:  142 Name: K8SApplicationBackup State: AGENT_WAIT      Error: 0
@@ -665,13 +640,12 @@ Job:  142 Name: K8SApplicationBackup State: COMPLETED       Error: 0
 ```
 Let’s also confirm that backup has been copied to remote S3 repo:
 
-```
+```execute
 robin repo contents pgsqlbackups
 ```
 You should see an output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin repo contents pgsqlbackups
 +----------------------------------+------------+--------------+----------------------+--------+--------------------+----------+
 | BackupID                         | ZoneID     | RepoName     | Owner/Tenant         | App    | Snapshot           | Imported |
 +----------------------------------+------------+--------------+----------------------+--------+--------------------+----------+
@@ -685,19 +659,19 @@ The snapshot has now been backed up into our AWS S3 bucket. Let’s note the “
 Let’s simulate a system failure where you lose local data. First, let’s delete the snapshot locally.
 
 
-```
+```execute
 robin snapshot delete Your_Snapshot_ID --wait
 ```
 
 ```
-[demo@ocp-svc ~]# robin snapshot delete 13cc8da2031a11eb99a99b354219f676 --wait
 Job:   143 Name: K8SSnapshotDelete    State: PREPARED        Error: 0
 Job:   143 Name: K8SSnapshotDelete    State: COMPLETED       Error: 0
 ```
 Now let’s simulate a data loss situation by deleting all data from the “movies” table and verify all data is lost.
 
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
-[demo@ocp-svc ~]# oc run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host movies-postgresql -U postgres -d testdb -p 5432
 If you don't see a command prompt, try pressing enter.
 psql (11.7)
 Type "help" for help.
@@ -708,17 +682,16 @@ testdb=# SELECT * from movies;
 movieid | year | title | genre
 ---------+------+-------+-------
 (0 rows)
-```
+
 We will now use our backed-up snapshot on S3 to restore data we just lost.
 
 Now let’s restore snapshot from the backup in cloud and rollback our application to that snapshot via the following command:
-```
+```execute
 robin app restore movies --backupid Your_Backup_ID --wait`
 ```
 You should see output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin app restore movies --backupid 60fe30f4032011eb9ac3e5c47d7a9357 --wait
 Job:  144 Name: K8SApplicationRollback State: VALIDATED       Error: 0
 Job:  144 Name: K8SApplicationRollback State: PREPARED        Error: 0
 Job:  144 Name: K8SApplicationRollback State: AGENT_WAIT      Error: 0
@@ -727,13 +700,12 @@ Job:  144 Name: K8SApplicationRollback State: COMPLETED       Error: 0
 
 Remember, we had deleted the local snapshot of our data. Let’s verify the above command has pulled the snapshot stored in the cloud. Run the following command:
 
-```
+```execute
 robin snapshot list --app movies
 ```
 You should see output similar to the following:
 
 ```
-[demo@ocp-svc ~]# robin snapshot list  --app movies
 +----------------------------------+--------+----------+----------+--------------------+
 | Snapshot ID                      | State  | App Name | App Kind | Snapshot name      |
 +----------------------------------+--------+----------+----------+--------------------+
@@ -742,8 +714,9 @@ You should see output similar to the following:
 ```
 Let’s verify all 9 rows are restored to the “movies” table by running the following command:
 
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
-[demo@ocp-svc ~]# kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres -d testdb -p 5432
 If you don't see a command prompt, try pressing enter.
 
 testdb=# SELECT * from movies;
@@ -767,12 +740,11 @@ As you can see, we can restore the database to a desired state in the event of d
 
 Since we have taken backup of PostgreSQL database, we can create a new app using the backup and verify the data integrity of the postgreSQL database.
 
-```
+```execute
 robin app create from-backup <app_name> <Your_backupID> --wait
 ```
 
 ```
-[demo@ocp-svc ~]# robin app create from-backup movies-bkp 60fe30f4032011eb9ac3e5c47d7a9357 --wait
 Job: 1093 Name: K8SApplicationCreate State: VALIDATED       Error: 0
 Job: 1093 Name: K8SApplicationCreate State: PREPARED        Error: 0
 Job: 1093 Name: K8SApplicationCreate State: AGENT_WAIT      Error: 0
@@ -789,7 +761,6 @@ Job: 1093 Name: K8SApplicationCreate State: COMPLETED       Error: 0
 
 
 ```
-[demo@ocp-svc ~]# robin app info  movies-bkp --status
 +-----------------------+---------------------------------------+--------+---------+
 | Kind                  | Name                                  | Status | Message |
 +-----------------------+---------------------------------------+--------+---------+
@@ -803,13 +774,14 @@ Job: 1093 Name: K8SApplicationCreate State: COMPLETED       Error: 0
 ```
 Lets verify the contents of the postgreSQL database app.
 
-```
+```execute
 export POSTGRES_PASSWORD=$(kubectl get secret movies-bkp-movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
 Connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
+```execute
+kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 ```
-[demo@ocp-svc ~]# kubectl run movies-bkp-postgresql-client --rm --tty -i --restart='Never' --namespace t001-u000003 --image docker.io/bitnami/postgresql:11.7.0-debian-10-r9 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host movies-bkp-movies-postgresql -U postgres -d testdb -p 5432
 If you don't see a command prompt, try pressing enter.
 
 testdb=# select * from movies;
