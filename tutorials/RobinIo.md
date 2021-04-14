@@ -98,7 +98,7 @@ curl -k "https://169.62.52.194:29442/api/v3/robin_server/download?file=robincli&
 Change the file permission for robin and copy it to /usr/bin/local to make it as a system command.
 
 In the same output above notice the field ‘Master _ Ip’ and use it to setup your Robin client to work with your OpenShift cluster, by running the following command
-```
+```execute
 robin client add-context 169.62.52.194 --set-current`
 ```
 
@@ -187,8 +187,11 @@ kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace
 ```
 If you don't see a command prompt, try pressing enter.
 
+```execute
 postgres=# CREATE DATABASE testdb;
-CREATE DATABASE
+```
+
+
 postgres=# \l
                                   List of databases
   Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
@@ -200,24 +203,30 @@ template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres       
           |          |          |             |             | postgres=CTc/postgres
 testdb    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
 (4 rows)
-```
+
 For the purpose of this tutorial, let’s create a table named “movies”.
 
-```
+```execute
 postgres=# \c testdb;
+```
 You are now connected to database "testdb" as user "postgres".
-postgres=# CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);
+
 CREATE TABLE
+```execute
+postgres=# CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);
+```
+
+```execute
 postgres=# \d
+```execute
         List of relations
 Schema |  Name  | Type  |  Owner
 --------+--------+-------+----------
 public | movies | table | postgres
 (1 row)
-```
-We need some sample data to perform operations on. Let’s add 9 movies to the “movies” table.
 
-```
+We need some sample data to perform operations on. Let’s add 9 movies to the “movies” table.
+```execute
 postgres=# INSERT INTO movies (movieid, year, title, genre) VALUES
 ('tt0360556', 2018, 'Fahrenheit 451', 'Drama'),
 ('tt0365545', 2018, 'Nappily Ever After', 'Comedy'),
