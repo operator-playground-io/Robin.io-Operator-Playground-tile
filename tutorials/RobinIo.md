@@ -184,8 +184,11 @@ If you don't see a command prompt, try pressing enter.
 postgres=# CREATE DATABASE testdb;
 ```
 
-
+```execute
 postgres=# \l
+```execute
+
+```
                                   List of databases
   Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
 -----------+----------+----------+-------------+-------------+-----------------------
@@ -196,6 +199,7 @@ template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres       
           |          |          |             |             | postgres=CTc/postgres
 testdb    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
 (4 rows)
+```
 
 For the purpose of this tutorial, let’s create a table named “movies”.
 
