@@ -186,10 +186,10 @@ postgres=# CREATE DATABASE testdb;
 
 ```execute
 postgres=# \l
-```execute
-
 ```
-                                  List of databases
+
+List of databases
+```
   Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges
 -----------+----------+----------+-------------+-------------+-----------------------
 postgres  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
@@ -215,7 +215,7 @@ postgres=# CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);
 
 ```execute
 postgres=# \d
-```execute
+```
         List of relations
 Schema |  Name  | Type  |  Owner
 --------+--------+-------+----------
@@ -261,7 +261,7 @@ To benefit from the data management capabilities, we’ll register our PostgreSQ
 
 As we have already added demo namespace in robin for the current user (administrator), robin will auto discover the helm apps registered in the demo namespace. verify robin app list and the helm release “movies” is present.
 
-```
+```execute
 robin app info movies --status
 ```
 You should see an output similar to this:
