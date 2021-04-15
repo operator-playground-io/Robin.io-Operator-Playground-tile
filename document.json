@@ -1,6 +1,6 @@
 {
-  "name": "RobinIo Operator",
-  "description": "RobinIo Operator",
+  "name": "Robin CNS Operator",
+  "description": "Robin CNS Operator",
   "logo": "_images/RobinIo-logo-3.png",
   "has_supporting_content": true,
   "stack_id": "RobinIo-operator",
