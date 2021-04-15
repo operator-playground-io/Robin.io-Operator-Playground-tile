@@ -122,11 +122,19 @@ Now, let’s create a PostgreSQL database using Helm and Robin Storage. When we 
 On Openshift 4.x, postgresql charts security context should be updated to allow the containers in previleged mode. Fetch the postgresql chart and make the below changes.
 
 ```execute
+mkdir postgresql-helm
+```
+
+```execute
+cd postgresql-helm
+```
+
+```execute
 helm fetch ibm-community/postgresql
 ```
 
 ```execute
-tar -xvf postgresql-*.tgz
+tar -xvf *.tgz
 ```
 
 
@@ -168,22 +176,32 @@ Let’s get the password of our PostgreSQL database from Kubernetes Secret
 ```execute
 export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
 ```
+To connect to your database from outside the cluster execute the following commands:
+
+```execute
+kubectl port-forward --namespace demo svc/movies-postgresql 5432:5432 & PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432
+```
 
 ###Add sample data to the PostgreSQL database
 
+```execute
+export IP_ADDRESS=$(kubectl get svc movies-postgresql -n demo -o jsonpath={.spec.clusterIP})
+```
+
+```execute
+export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
+```
+
 Let’s create a database “testdb” and connect to “testdb”.
 
-```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
-```
-If you don't see a command prompt, try pressing enter.
 
 ```execute
-CREATE DATABASE testdb;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "CREATE DATABASE testdb;"
 ```
 
 ```execute
 \l
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "\l"
 ```
 
 List of databases
@@ -202,17 +220,18 @@ testdb    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
 For the purpose of this tutorial, let’s create a table named “movies”.
 
 ```execute
-\c testdb;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "\c testdb"
 ```
 You are now connected to database "testdb" as user "postgres".
 
 CREATE TABLE
 ```execute
-CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);"
 ```
 
 ```execute
-\d
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "\d"
+
 ```
 List of relations
 ```
@@ -224,21 +243,12 @@ public | movies | table | postgres
 
 We need some sample data to perform operations on. Let’s add 9 movies to the “movies” table.
 ```execute
-INSERT INTO movies (movieid, year, title, genre) VALUES
-('tt0360556', 2018, 'Fahrenheit 451', 'Drama'),
-('tt0365545', 2018, 'Nappily Ever After', 'Comedy'),
-('tt0427543', 2018, 'A Million Little Pieces','Drama'),
-('tt0432010', 2018, 'The Queen of Sheba Meets the Atom Man', 'Comedy'),
-('tt0825334', 2018, 'Caravaggio and My Mother the Pope', 'Comedy'),
-('tt0859635', 2018, 'Super Troopers 2', 'Comedy'),
-('tt0862930', 2018, 'Dukun', 'Horror'),
-('tt0891581', 2018, 'RxCannabis: A Freedom Tale', 'Documentary'),
-('tt0933876', 2018, 'June 9', 'Horror');
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0360556', 2018, 'Fahrenheit 451', 'Drama');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0365545', 2018, 'Nappily Ever After', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0427543', 2018, 'A Million Little Pieces', 'Drama');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0432010', 2018, 'The Queen of Sheba Meets the Atom Man', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0825334', 2018, 'Caravaggio and My Mother the Pope', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0859635', 2018, 'Super Troopers 2', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0862930', 2018, 'Dukun', 'Horror');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0891581', 2018, 'RxCannabis: A Freedom Tale', 'Documentary');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0933876', 2018, 'June 9', 'Horror');"
 ```
 Let’s verify data was added to the “movies” table by running the following command. You should see an output with the “movies” table and the nine rows in it as follows:
 
 ```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -256,9 +266,6 @@ tt0933876 | 2018 | June 9                                | Horror
 ```
 We now have a PostgreSQL database with a table and some sample data. Now, let’s take a look at the data management capabilities Robin brings, such as taking snapshots, making clones, and creating backups.
 
-```execute
-\q
-```
 
 ###Verify the PostgreSQL Helm release has been registered as an application
 
@@ -314,29 +321,15 @@ We now have a snapshot of our entire database with information of all 9 movies.
 
 We have 9 rows in our “movies” table. To test the snapshot and rollback functionality, let’s simulate a user error by deleting a movie from the “movies” table.
 
-```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
-```
-
-```execute
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
-```
  
 ```execute
-kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies where title = 'June 9';"
 ```
 
-```execute
-\c testdb;
-```
-
-```execute
-DELETE from movies where title = 'June 9';
-```
 Let’s verify the movie titled “June 9” has been deleted.
 
 ```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -402,27 +395,7 @@ Job:  136 Name: K8SApplicationRollback State: COMPLETED       Error: 0
 To verify we have rolled back to 9 movies in the “movies” table, run the following command.
 
 ```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
-```
-
-```execute
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
-```
- 
-```execute
-kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
-```
-If you don't see a command prompt, try pressing enter.
-
-psql (11.7)
-Type "help" for help.
-
-```execute
-\c testdb;
-```
-
-```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -483,9 +456,7 @@ statefulset.apps/movies-clone-movies-postgresql   1/1     109s
 Notice that Robin automatically clones the required Kubernetes resources, not just storage volumes (PVCs), that are required to stand up a fully-functional clone of our database. After the clone is complete, the cloned database is ready for use.
 
 Get Service IP address of our postgresql database clone, and note the IP address.
-```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
-```
+
 Get Password of our postgresql database clone from Kubernetes Secret
 
 ```execute
@@ -493,25 +464,9 @@ export POSTGRES_PASSWORD=$(kubectl get secret movies-clone-movies-postgresql -o 
 ```
 To verify we have successfully created a clone of our PostgreSQL database, run the following command. You should see an output similar to the following:
 
-```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
-```
 
 ```execute
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
-```
- 
-```execute
-kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
-```
-
-```execute
-\c testdb;
-```
-
-If you don't see a command prompt, try pressing enter.
-```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -532,13 +487,13 @@ We have successfully created a clone of our original PostgreSQL database, and th
 Now, let’s make changes to the clone and verify the original database remains unaffected by changes to the clone. Let’s delete the movie called “Super Troopers 2”.
 
 ```execute
-DELETE from movies where title = 'Super Troopers 2';
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies where title = 'Super Troopers 2';"
 ```
 Let’s verify the movie has been deleted. You should see an output similar to the following with 8 movies.
 
 
 ```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -568,25 +523,9 @@ To verify that our PostgreSQL database is unaffected by changes to the clone, ru
 
 Let’s connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
-```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
-```
-
-```execute
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
-```
- 
-```execute
-kubectl exec -it movies-postgresql-client -n demo -- psql --host $IP_ADDRESS -U postgres
-```
-
-```execute
-\c testdb;
-```
-
 If you don't see a command prompt, try pressing enter.
 ```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -603,9 +542,7 @@ tt0933876 | 2018 | June 9                                | Horror
 (9 rows)
 ```
 This means we can work on the original PostgreSQL database and the cloned database simultaneously without affecting each other. This is valuable for collaboration across teams where each team needs to perform unique set of operations.
-```execute
-\q
-```
+
 To see a list of all clones created by Robin run the following command:
 
 ```execute
@@ -625,9 +562,7 @@ Job:  138 Name: K8SAppDelete         State: AGENT_WAIT      Error: 0
 Job:  138 Name: K8SAppDelete         State: FINALIZED       Error: 0
 Job:  138 Name: K8SAppDelete         State: COMPLETED       Error: 0
 ```
-```execute
-\q
-```
+
 ###Backup the PostgreSQL Database to AWS S3
 
 Robin elevates the experience from backing up just storage volumes (PVCs) to backing up entire applications/databases, including their metadata, configuration, and data.
@@ -751,18 +686,16 @@ Job:   143 Name: K8SSnapshotDelete    State: COMPLETED       Error: 0
 ```
 Now let’s simulate a data loss situation by deleting all data from the “movies” table and verify all data is lost.
 
+
+
 ```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
-```
-If you don't see a command prompt, try pressing enter.
-psql (11.7)
-Type "help" for help.
-```execute
-DELETE from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies;"
+
 ```
 DELETE 9
 ```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
+
 ```
 ```
 movieid | year | title | genre
@@ -770,9 +703,6 @@ movieid | year | title | genre
 (0 rows)
 ```
 
-```execute
-\q;
-```
 We will now use our backed-up snapshot on S3 to restore data we just lost.
 
 Now let’s restore snapshot from the backup in cloud and rollback our application to that snapshot via the following command:
@@ -804,12 +734,10 @@ You should see output similar to the following:
 ```
 Let’s verify all 9 rows are restored to the “movies” table by running the following command:
 
-```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
-```
+
 If you don't see a command prompt, try pressing enter.
 ```execute
-SELECT * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
@@ -871,17 +799,9 @@ export POSTGRES_PASSWORD=$(kubectl get secret movies-bkp-movies-postgresql -o js
 ```
 Connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
-```execute
-kubectl run movies-postgresql-client --rm --tty -i --restart='Never' --namespace demo --image docker.io/bitnami/postgresql:10.7.0 --env="PGPASSWORD=$POSTGRES_PASSWORD" --command -- psql --host $IP_ADDRESS -U postgres
 
 ```execute
-\c testdb;
-```
-
-```
-If you don't see a command prompt, try pressing enter.
-```execute
-select * from movies;
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
 ```
 ```
   movieid  | year |                 title                 |    genre
