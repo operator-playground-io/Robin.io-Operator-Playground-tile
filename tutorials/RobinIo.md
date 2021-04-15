@@ -459,11 +459,56 @@ Robin enables you to back up your Kubernetes applications to AWS S3 or Google GC
 
 Before we proceed, we need to create an S3 bucket and get access parameters for it. Follow the documentation here.
 
-Let’s first register an AWS repo with Robin via the following command:
+Let’s first register an AWS repo with Robin via the following command format:
 
-```execute
+```
+robin repo register <reponame> s3|gcs://bucket[/path/to/folder] <credentials> <readwrite | readonly>
+```
+
+| command parameter         | Description                                                  |
+| ------------------------- | ------------------------------------------------------------ |
+| `reponame`                | A name that would be assigned to the repo                    |
+| `s3|gcs`                  | Type of the repo. It can be one of these values: ‘s3’ representing AWS S3 and gcs representing Google Cloud Storage |
+| `bucket[/path/to/folder]` | S3/GCS bucket name and a folder within that bucket into which the application snapshots would be pushed (backed up) |
+| `<credentials>`           | Path to a JSON file with credentials to access the repo. The format for different repo types is shown below |
+| `<readwrite | readonly>`  | Specifies the permissions with which the repo is registered with. The ‘readwrite’ permission creates the bucket and the folder hierarchy in the repo if it doesn’t already exist. This assumes that the supplied credentials have bucket creation privileges. With the ‘readonly’ permission the repo is registered in read-only mode - it can only be used to pull already pushed application snapshots from the repo. New snapshots cannot be written to this repo |
+
+**Format of the credentials file for an AWS S3 type repo**
+
+The format of the json file passed via the `<credentials>` parameter for AWS S3 type repos is:
+
+```
+{
+        "aws_access_key_id" : "YOUR_KEY_ID",
+        "aws_secret_access_key" : "YOUR_ACCESS_KEY",
+        "end_point": "s3.amazonaws.com",
+}
+```
+
+In addition to the mandatory parameters detailed above, the following parameters may also be utilized within the credentials JSON file:
+
+- `region: <region_name>` - A string specifying the region in which to create the bucket. The default value is ‘us-east-1’. Note this option is not needed if the bucket already exists.
+- `tls: [yes|no]` - A boolean value indicating whether or not the HTTPs protocol should be used or not.
+- `validate_certs: [yes|no]` - A boolean value indicating whether or not certificate validation should be performed or not.
+- `ca_file: <file_path>` - A string into the path at which to find the CA chain certificate to verify the S3 server certificate. Note this certificate is only used when HTTPs protocol usage is enabled.
+
+AWS Access Key and Secret Keys can be obtained this way:
+
+1. Log in to your AWS Management Console.
+2. Click on your user name at the top right of the page.
+3. Click on the Security Credentials link from the drop-down menu.
+4. Find the Access Credentials section, and copy the latest Access Key ID.
+5. Click on the Show link in the same row, and copy the Secret Access Key.
+
+
+Example:
+
+```
  robin repo register pgsqlbackups s3://robin-pgsql/pgsqlbackups awstier.json readwrite --wait
 ```
+
+NOTE: Before you continue with below steps please ensure you have registered an AWS repo with Robin.
+
 
 The following should be displayed when the above command is run:
 
@@ -473,7 +518,7 @@ Job:  139 Name: StorageRepoAdd       State: COMPLETED       Error: 0
 ```
 Let’s confirm that our secondary storage repository is successfully registered:
 
-```execute
+```
 robin repo list
 ```
 
@@ -484,14 +529,15 @@ robin repo list
 | pgsqlbackups | AWS_S3 | admin/Administrators | 1            | robin-pgsql | pgsqlbackups/ | readwrite   |
 +--------------+--------+----------------------+--------------+-------------+---------------+-------------+
 ```
+
 Let’s attach this repo to our app so that we can backup its snapshots there:
 
-```execute
+```
 robin app attach-repo movies pgsqlbackups --wait
 ```
 Let’s confirm that our secondary storage repository is successfully attached to app:
 
-```execute
+```
 robin app info movies
 ```
 You should see an output similar to the following:
@@ -530,7 +576,7 @@ Snapshots:
 
 Lets take the backup of the snapshot to the remote S3 repo.
 
-```execute
+```
 robin backup create movies pgsqlbackups --snapshotid Your_snaphsot_ID --backupname Name_of_Backup --wait
 ```
 You should see an output similar to the following:
@@ -543,7 +589,7 @@ Job:  142 Name: K8SApplicationBackup State: COMPLETED       Error: 0
 ```
 Let’s also confirm that backup has been copied to remote S3 repo:
 
-```execute
+```
 robin repo contents pgsqlbackups
 ```
 You should see an output similar to the following:
@@ -557,12 +603,12 @@ You should see an output similar to the following:
 ```
 The snapshot has now been backed up into our AWS S3 bucket. Let’s note the “BackupID”, because we will need it to restore the database in the next step.
 
-###Restore the PostgreSQL Database
+###Restore the PostgreSQL Database from the backup on AWS S3
 
 Let’s simulate a system failure where you lose local data. First, let’s delete the snapshot locally.
 
 
-```execute
+```
 robin snapshot delete SNAPSHOT_ID_HERE --wait
 ```
 
@@ -574,7 +620,7 @@ Now let’s simulate a data loss situation by deleting all data from the “movi
 
 
 
-```execute
+```
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies;"
 ```
 
@@ -582,7 +628,7 @@ PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DE
 DELETE 9
 ```
 
-```execute
+```
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
 
 ```
@@ -595,7 +641,8 @@ movieid | year | title | genre
 We will now use our backed-up snapshot on S3 to restore data we just lost.
 
 Now let’s restore snapshot from the backup in cloud and rollback our application to that snapshot via the following command:
-```execute
+
+```
 robin app restore movies --backupid Your_Backup_ID --wait`
 ```
 You should see output similar to the following:
@@ -609,7 +656,7 @@ Job:  144 Name: K8SApplicationRollback State: COMPLETED       Error: 0
 
 Remember, we had deleted the local snapshot of our data. Let’s verify the above command has pulled the snapshot stored in the cloud. Run the following command:
 
-```execute
+```
 robin snapshot list --app movies
 ```
 You should see output similar to the following:
@@ -625,9 +672,11 @@ Let’s verify all 9 rows are restored to the “movies” table by running the 
 
 
 If you don't see a command prompt, try pressing enter.
-```execute
+
+```
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
 ```
+
 ```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
@@ -649,7 +698,7 @@ As you can see, we can restore the database to a desired state in the event of d
 
 Since we have taken backup of PostgreSQL database, we can create a new app using the backup and verify the data integrity of the postgreSQL database.
 
-```execute
+```
 robin app create from-backup <app_name> <Your_backupID> --wait
 ```
 
@@ -683,15 +732,16 @@ Job: 1093 Name: K8SApplicationCreate State: COMPLETED       Error: 0
 ```
 Lets verify the contents of the postgreSQL database app.
 
-```execute
+```
 export POSTGRES_PASSWORD=$(kubectl get secret movies-bkp-movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
 Connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
 
-```execute
+```
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
 ```
+
 ```
   movieid  | year |                 title                 |    genre
 -----------+------+---------------------------------------+-------------
