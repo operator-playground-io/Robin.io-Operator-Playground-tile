@@ -694,7 +694,7 @@ tt0933876 | 2018 | June 9                                | Horror
 
 As you can see, we can restore the database to a desired state in the event of data corruption. We simply pull the backup from the cloud and use it to restore the database.
 
-###Create PostgreSQL Database from the backup
+###Create PostgreSQL Database from the backup the backup on AWS S3
 
 Since we have taken backup of PostgreSQL database, we can create a new app using the backup and verify the data integrity of the postgreSQL database.
 
@@ -708,14 +708,6 @@ Job: 1093 Name: K8SApplicationCreate State: PREPARED        Error: 0
 Job: 1093 Name: K8SApplicationCreate State: AGENT_WAIT      Error: 0
 Job: 1093 Name: K8SApplicationCreate State: COMPLETED       Error: 0
 ```
-
-
-
-
-
-
-
-
 
 
 ```
