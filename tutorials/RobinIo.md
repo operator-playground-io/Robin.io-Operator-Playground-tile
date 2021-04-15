@@ -318,7 +318,7 @@ Job:  137 Name: K8SApplicationClone  State: COMPLETED       Error: 0
 Let’s verify Robin has cloned all relevant Kubernetes resources.
 
 ```execute
-kubectl get all | grep "movies-clone"
+kubectl get all -n demo | grep "movies-clone"
 ```
 You should see an output similar to below.
 
@@ -335,13 +335,13 @@ Notice that Robin automatically clones the required Kubernetes resources, not ju
 Get Service IP address of our postgresql database clone, and note the IP address.
 
 ```execute
-export IP_ADDRESS=$(kubectl get svc movies-clone-movies-postgresql -o jsonpath={.spec.clusterIP})
+export IP_ADDRESS=$(kubectl get svc movies-clone-movies-postgresql -n demo -o jsonpath={.spec.clusterIP})
 ```
 
 Get Password of our postgresql database clone from Kubernetes Secret
 
 ```execute
-export POSTGRES_PASSWORD=$(kubectl get secret movies-clone-movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
+export POSTGRES_PASSWORD=$(kubectl get secret movies-clone-movies-postgresql -n demo -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
 
 To verify we have successfully created a clone of our PostgreSQL database, run the following command. You should see an output similar to the following:
@@ -429,7 +429,7 @@ This means we can work on the original PostgreSQL database and the cloned databa
 To see a list of all clones created by Robin run the following command:
 
 ```execute
-robin app list --app-types CLONE`
+robin app list --app-types CLONE
 ```
 
 Now let’s delete the clone. Clone is just any other Robin app so it can be deleted using the native ‘app delete’ command show below.
