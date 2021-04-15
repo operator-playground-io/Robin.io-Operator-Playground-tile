@@ -1,149 +1,22 @@
-###Confirm that OpenShift cluster is up and running.
 
-```execute
-kubectl get nodes
-```
-You should see an output similar to below, with the status of each node marked as Ready 
+###Deploy a PostgreSQL database on Cluster
 
-```
-NAME                                                      STATUS   ROLES    AGE   VERSION
-event-k8s-ibm-operators-playground-ycitju.softlayer.com   Ready    master   18h   v1.16.0
-```
-###Confirm that Robin is up and running. Run the following command to verify that Robin is ready.
+Create a PostgreSQL database using Helm and Robin Storage. 
 
-```execute
-kubectl get robincluster -n robinio
-```
-You should see an output similar to below.
+When we installed the Robin operator and created a “Robincluster” custom resource definition as part of Install operation, we created and registered a StorageClass named “Robin”. We can now use this StorageClass to create PersistentVolumes and PersistentVolumeClaims for the pods in OpenShift. Using this StorageClass allows us to access the data management capabilities (such as snapshot, clone, backup) provided by Robin Storage.
 
-```
-NAME    AGE
-robin   12h
-```
-To get the link to download Robin client do:
-
-```execute
-kubectl describe robincluster -n robinio
-```
-You should see an output similar to below:
-
-```                                                                                                                                                                           
-Name:         robin
-Namespace:    robinio
-Labels:       app.kubernetes.io/instance=robin
-              app.kubernetes.io/managed-by=robin.io
-              app.kubernetes.io/name=robin
-Annotations:  <none>
-API Version:  manage.robin.io/v1
-Kind:         RobinCluster
-Metadata:
-  Creation Timestamp:  2020-09-29T19:31:27Z
-  Generation:          1
-  Managed Fields:
-    API Version:  manage.robin.io/v1
-    Fields Type:  FieldsV1
-    fieldsV1:
-      f:metadata:
-        f:labels:
-          .:
-          f:app.kubernetes.io/instance:
-          f:app.kubernetes.io/managed-by:
-          f:app.kubernetes.io/name:
-      f:spec:
-        .:
-        f:host_type:
-        f:image_robin:
-        f:k8s_provider:
-    Manager:      oc
-    Operation:    Update
-    Time:         2020-09-29T19:31:27Z
-    API Version:  manage.robin.io/v1
-    Fields Type:  FieldsV1
-    fieldsV1:
-      f:status:
-        .:
-        f:connect_command:
-        f:get_robin_client:
-        f:master_ip:
-        f:phase:
-        f:pod_status:
-        f:robin_node_status:
-    Manager:         robin-operator
-    Operation:       Update
-    Time:            2020-09-30T12:20:21Z
-  Resource Version:  1788633
-  Self Link:         /apis/manage.robin.io/v1/namespaces/robinio/robinclusters/robin
-  UID:               c53fb011-56ae-490c-a2a2-0b5b19f03082
-Spec:
-  host_type:     physical
-  image_robin:   robinsys/robinimg:5.3.2-506
-  k8s_provider:  openshift
-Status:
-  connect_command:   kubectl exec -it robin-z27qg -n robinio -- bash
-  get_robin_client:  curl -k https://169.62.52.194:29442/api/v3/robin_server/download?file=robincli&os=linux > robin
-  master_ip:         169.62.52.194
-  Phase:             Ready
-```
-Run the corresponding command to go inside robin directory.
-
-```execute
-cd robin
-```
-
-Find the field ‘Get _ Robin _ Client’ and run the corresponding command to get the Robin client.
-
-```execute
-curl -k "https://169.62.52.194:29442/api/v3/robin_server/download?file=robincli&os=linux" > robin
-```
-Change the file permission for robin and copy it to /usr/bin/local to make it as a system command.
-
-In the same output above notice the field ‘Master _ Ip’ and use it to setup your Robin client to work with your OpenShift cluster, by running the following command
-```execute
-robin client add-context 169.62.52.194 --set-current`
-```
-
-```execute
-robin login admin --password Robin123
-```
+Add a namespace for Robin to monitor.
 
 ```execute
 robin namespace add demo
 ```
-Let’s add a stable Helm repository to pull Helm charts from. For this tutorial, we will use the IBM Community Helm repo. This repository has Helm charts designed to run on OpenShift.
+
+Install PostgreSQL chart from bitnami.
 
 ```execute
-helm repo add ibm-community https://raw.githubusercontent.com/IBM/charts/master/repo/community
+helm install movies bitnami/postgresql -n demo --set persistence.storageClass=robin
 ```
 
-###Deploy a PostgreSQL database on OpenShift
-
-Now, let’s create a PostgreSQL database using Helm and Robin Storage. When we installed the Robin operator and created a “Robincluster” custom resource definition, we created and registered a StorageClass named “Robin” with OpenShift. We can now use this StorageClass to create PersistentVolumes and PersistentVolumeClaims for the pods in OpenShift. Using this StorageClass allows us to access the data management capabilities (such as snapshot, clone, backup) provided by Robin Storage.
-
-On Openshift 4.x, postgresql charts security context should be updated to allow the containers in previleged mode. Fetch the postgresql chart and make the below changes.
-
-```execute
-mkdir postgresql-helm
-```
-
-```execute
-cd postgresql-helm
-```
-
-```execute
-helm fetch ibm-community/postgresql
-```
-
-```execute
-tar -xvf *.tgz
-```
-
-
-
-Using the below Helm command, we will deploy a PostgreSQL instance. (postgresql is the directory where the modified statefulset.yaml file is present and movies is the name of the helm release).
-
-```execute
-helm install movies ./postgresql -n demo --set persistence.storageClass=robin,persistence.useDynamicProvisioning=true
-```
 Run the following command to verify our database called “movies” is deployed and all relevant Kubernetes resources are ready.
 
 ```execute
@@ -152,9 +25,10 @@ helm list -n demo
 You should be able to see an output showing the status of your Postgres database.
 
 ```
-NAME    NAMESPACE         REVISION        UPDATED                                       STATUS            CHART                 APP VERSION
-movies  demo              1               2021-04-13 03:38:48.111777446 -0500 CDT       deployed        postgresql-3.18.3       10.7.0
+NAME    NAMESPACE       REVISION        UPDATED                                 STATUS   CHART                    APP VERSION
+movies  demo            1               2021-04-15 06:08:53.108257288 -0500 CDT deployed postgresql-10.3.15       11.11.0
 ```
+
 You would also want to make sure Postgres database services are running before proceeding further. Run the following command to verify the services are running.
 
 ```execute
@@ -163,24 +37,10 @@ kubectl get service -n demo | grep movies
 You should see an output similar to the following.
 
 ```
-movies-postgresql            ClusterIP   None            <none>        5432/TCP         2m55s
-movies-postgresql-headless   ClusterIP   None            <none>        5432/TCP         2m55s
+movies-postgresql            ClusterIP   10.100.187.49   <none>        5432/TCP   3m29s
+movies-postgresql-headless   ClusterIP   None            <none>        5432/TCP   3m29s
 ```
-Now that we know the PostgreSQL services are up and running, let’s get Service IP address of our database.
 
-```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
-```
-Let’s get the password of our PostgreSQL database from Kubernetes Secret
-
-```execute
-export POSTGRES_PASSWORD=$(kubectl get secret --namespace demo movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode)
-```
-To connect to your database from outside the cluster execute the following commands:
-
-```execute
-kubectl port-forward --namespace demo svc/movies-postgresql 5432:5432 & PGPASSWORD="$POSTGRES_PASSWORD" psql --host 127.0.0.1 -U postgres -d postgres -p 5432
-```
 
 ###Add sample data to the PostgreSQL database
 
@@ -199,8 +59,9 @@ Let’s create a database “testdb” and connect to “testdb”.
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "CREATE DATABASE testdb;"
 ```
 
+LIST DATABASES: 
+
 ```execute
-\l
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "\l"
 ```
 
@@ -224,11 +85,13 @@ PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "\c testdb"
 ```
 You are now connected to database "testdb" as user "postgres".
 
-CREATE TABLE
+CREATE TABLE:
+
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "CREATE TABLE movies (movieid TEXT, year INT, title TEXT, genre TEXT);"
 ```
 
+DESCRIBE TABLE:
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "\d"
 
@@ -242,6 +105,7 @@ public | movies | table | postgres
 ```
 
 We need some sample data to perform operations on. Let’s add 9 movies to the “movies” table.
+
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0360556', 2018, 'Fahrenheit 451', 'Drama');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0365545', 2018, 'Nappily Ever After', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0427543', 2018, 'A Million Little Pieces', 'Drama');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0432010', 2018, 'The Queen of Sheba Meets the Atom Man', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0825334', 2018, 'Caravaggio and My Mother the Pope', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0859635', 2018, 'Super Troopers 2', 'Comedy');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0862930', 2018, 'Dukun', 'Horror');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0891581', 2018, 'RxCannabis: A Freedom Tale', 'Documentary');INSERT INTO movies (movieid, year, title, genre) VALUES ('tt0933876', 2018, 'June 9', 'Horror');"
 ```
@@ -285,10 +149,14 @@ You should see an output similar to this:
 | Secret                | movies-postgresql          | Ready  | -       |
 | PersistentVolumeClaim | data-movies-postgresql-0   | Bound  | -       |
 | Pod                   | movies-postgresql-0        | Ready  | -       |
-| Service               | movies-postgresql-headless | Ready  | -       |
 | Service               | movies-postgresql          | Ready  | -       |
+| Service               | movies-postgresql-headless | Ready  | -       |
 | StatefulSet           | movies-postgresql          | Ready  | -       |
 +-----------------------+----------------------------+--------+---------+
+Key:
+  Green: Object is running
+  Yellow: Object is potentially down
+  Red: Object is down
 ```
 
 ###Snapshot the PostgreSQL Database
@@ -300,6 +168,16 @@ Robin lets you snapshot not just the storage volumes (PVCs) but the entire datab
 ```execute
 robin snapshot create movies --snapname snap9movies --desc "contains 9 movies" --wait
 ```
+
+Output:
+
+```
+Job:   20 Name: K8SApplicationSnapshot State: VALIDATED       Error: 0
+Job:   20 Name: K8SApplicationSnapshot State: PROCESSED       Error: 0
+Job:   20 Name: K8SApplicationSnapshot State: WAITING         Error: 0
+Job:   20 Name: K8SApplicationSnapshot State: COMPLETED       Error: 0
+```
+
 Let’s verify we have successfully created the snapshot.
 
 ```execute
@@ -311,40 +189,42 @@ You should see an output similar to this:
 +----------------------------------+--------+----------+----------+--------------------+
 | Snapshot ID                      | State  | App Name | App Kind | Snapshot name      |
 +----------------------------------+--------+----------+----------+--------------------+
-| 13cc8da2031a11eb99a99b354219f676 | ONLINE | movies   | helm     | movies_snap9movies |
+| e9a5968a9d8111eb9411a7d5a83ebd67 | ONLINE | movies   | helm     | movies_snap9movies |
 +----------------------------------+--------+----------+----------+--------------------+
 ```
 
 We now have a snapshot of our entire database with information of all 9 movies.
 
-###Rollback the PostgreSQL database
+###Simulate a user error 
 
-We have 9 rows in our “movies” table. To test the snapshot and rollback functionality, let’s simulate a user error by deleting a movie from the “movies” table.
-
+Simulate a user error by deleting some movies from the “movies” table.
  
 ```execute
-PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies where title = 'June 9';"
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies where genre = 'Comedy';"
 ```
 
-Let’s verify the movie titled “June 9” has been deleted.
+```execute
+PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies where title = 'Dukun';"
+```
+
+Check the DB entries now:
+
 
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
+
 ```
-  movieid  | year |                 title                 |    genre
------------+------+---------------------------------------+-------------
-tt0360556 | 2018 | Fahrenheit 451                        | Drama
-tt0365545 | 2018 | Nappily Ever After                    | Comedy
-tt0427543 | 2018 | A Million Little Pieces               | Drama
-tt0432010 | 2018 | The Queen of Sheba Meets the Atom Man | Comedy
-tt0825334 | 2018 | Caravaggio and My Mother the Pope     | Comedy
-tt0859635 | 2018 | Super Troopers 2                      | Comedy
-tt0862930 | 2018 | Dukun                                 | Horror
-tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
-(8rows)
+  movieid  | year |           title            |    genre    
+-----------+------+----------------------------+-------------
+ tt0360556 | 2018 | Fahrenheit 451             | Drama
+ tt0427543 | 2018 | A Million Little Pieces    | Drama
+ tt0891581 | 2018 | RxCannabis: A Freedom Tale | Documentary
+ tt0933876 | 2018 | June 9                     | Horror
+(4 rows)
 ```
 
+###Rollback the PostgreSQL database
 
 Let’s run the following command to see the available snapshots:
 
@@ -373,21 +253,21 @@ Snapshots:
 +----------------------------------+--------------------+-------------------+--------+----------------------+
 | Id                               | Name               | Description       | State  | Creation Time        |
 +----------------------------------+--------------------+-------------------+--------+----------------------+
-| 13cc8da2031a11eb99a99b354219f676 | movies_snap9movies | contains 9 movies | ONLINE | 30 Sep 2020 07:40:27 |
+| e9a5968a9d8111eb9411a7d5a83ebd67 | movies_snap9movies | contains 9 movies | ONLINE | 30 Sep 2020 07:40:27 |
 +----------------------------------+--------------------+-------------------+--------+----------------------+
 ```
-Now, let’s rollback to the point where we had 9 movies, including “June 9”, using the snapshot id displayed above via the following command:
+Now, let’s rollback to the point where we had 9 movies :
 
 ```execute
-robin app restore movies --snapshotid Your_Snapshot_ID --wait
+robin app restore movies --snapshotid SNAPSHOT_ID_HERE --wait 
 ```
 You should see an output similar to the following:
 
 ```
-Job:  136 Name: K8SApplicationRollback State: VALIDATED       Error: 0
-Job:  136 Name: K8SApplicationRollback State: PREPARED        Error: 0
-Job:  136 Name: K8SApplicationRollback State: AGENT_WAIT      Error: 0
-Job:  136 Name: K8SApplicationRollback State: COMPLETED       Error: 0
+Job:   26 Name: K8SApplicationRollback State: PROCESSED       Error: 0
+Job:   26 Name: K8SApplicationRollback State: PREPARED        Error: 0
+Job:   26 Name: K8SApplicationRollback State: AGENT_WAIT      Error: 0
+Job:   26 Name: K8SApplicationRollback State: COMPLETED       Error: 0
 ```
 To verify we have rolled back to 9 movies in the “movies” table, run the following command.
 
@@ -422,7 +302,7 @@ Robin clones are ready-to-use “thin copies” of the entire app/database, not 
 To create a clone from the existing snapshot created above, run the following command. Use the snapshot id we retrieved above.
 
 ```copy
-robin app create from-snapshot movies-clone Your_Snapshot_ID --wait
+robin app create from-snapshot movies-clone SNAPSHOT_ID_HERE --wait
 ```
 You should see output similar to the following:
 
@@ -454,11 +334,16 @@ Notice that Robin automatically clones the required Kubernetes resources, not ju
 
 Get Service IP address of our postgresql database clone, and note the IP address.
 
+```execute
+export IP_ADDRESS=$(kubectl get svc movies-clone-movies-postgresql -o jsonpath={.spec.clusterIP})
+```
+
 Get Password of our postgresql database clone from Kubernetes Secret
 
 ```execute
 export POSTGRES_PASSWORD=$(kubectl get secret movies-clone-movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
+
 To verify we have successfully created a clone of our PostgreSQL database, run the following command. You should see an output similar to the following:
 
 
@@ -508,9 +393,11 @@ tt0933876 | 2018 | June 9                                | Horror
 Now, let’s connect to our original PostgreSQL database and verify it is unaffected.
 
 Get Service IP address of our postgresql database.
+
 ```execute
-export IP_ADDRESS=$(kubectl get pod movies-postgresql-0 -o jsonpath={.status.podIP} -n demo)
+export IP_ADDRESS=$(kubectl get svc movies-postgresql -n demo -o jsonpath={.spec.clusterIP})
 ```
+
 Get Password of our original postgre database from Kubernetes Secret.
 
 ```execute
@@ -520,7 +407,6 @@ To verify that our PostgreSQL database is unaffected by changes to the clone, ru
 
 Let’s connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
-If you don't see a command prompt, try pressing enter.
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "select * from movies;"
 ```
@@ -545,6 +431,7 @@ To see a list of all clones created by Robin run the following command:
 ```execute
 robin app list --app-types CLONE`
 ```
+
 Now let’s delete the clone. Clone is just any other Robin app so it can be deleted using the native ‘app delete’ command show below.
 
 ```execute
@@ -577,7 +464,8 @@ Let’s first register an AWS repo with Robin via the following command:
 ```execute
  robin repo register pgsqlbackups s3://robin-pgsql/pgsqlbackups awstier.json readwrite --wait
 ```
-This following should be displayed when the above command is run:
+
+The following should be displayed when the above command is run:
 
 ```
 Job:  139 Name: StorageRepoAdd       State: PROCESSED       Error: 0
@@ -636,9 +524,10 @@ Snapshots:
 +----------------------------------+--------------------+-------------------+--------+----------------------+
 | Id                               | Name               | Description       | State  | Creation Time        |
 +----------------------------------+--------------------+-------------------+--------+----------------------+
-| 13cc8da2031a11eb99a99b354219f676 | movies_snap9movies | contains 9 movies | ONLINE | 30 Sep 2020 07:40:27 |
+| e9a5968a9d8111eb9411a7d5a83ebd67 | movies_snap9movies | contains 9 movies | ONLINE | 30 Sep 2020 07:40:27 |
 +----------------------------------+--------------------+-------------------+--------+----------------------+
 ```
+
 Lets take the backup of the snapshot to the remote S3 repo.
 
 ```execute
@@ -674,7 +563,7 @@ Let’s simulate a system failure where you lose local data. First, let’s dele
 
 
 ```execute
-robin snapshot delete Your_Snapshot_ID --wait
+robin snapshot delete SNAPSHOT_ID_HERE --wait
 ```
 
 ```
@@ -687,9 +576,12 @@ Now let’s simulate a data loss situation by deleting all data from the “movi
 
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "DELETE from movies;"
+```
 
 ```
 DELETE 9
+```
+
 ```execute
 PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -d testdb -c "SELECT * from movies;"
 
@@ -726,7 +618,7 @@ You should see output similar to the following:
 +----------------------------------+--------+----------+----------+--------------------+
 | Snapshot ID                      | State  | App Name | App Kind | Snapshot name      |
 +----------------------------------+--------+----------+----------+--------------------+
-| 13cc8da2031a11eb99a99b354219f676 | ONLINE | movies   | helm     | movies_snap9movies |
+| e9a5968a9d8111eb9411a7d5a83ebd67 | ONLINE | movies   | helm     | movies_snap9movies |
 +----------------------------------+--------+----------+----------+--------------------+
 ```
 Let’s verify all 9 rows are restored to the “movies” table by running the following command:
@@ -814,6 +706,5 @@ tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
 tt0933876 | 2018 | June 9                                | Horror
 (9 rows)
 ```
-
 
 
