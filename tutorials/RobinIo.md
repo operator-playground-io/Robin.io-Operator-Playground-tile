@@ -345,9 +345,6 @@ tt0891581 | 2018 | RxCannabis: A Freedom Tale            | Documentary
 (8rows)
 ```
 
-```execute
-\q
-```
 
 Let’s run the following command to see the available snapshots:
 
