@@ -1,6 +1,6 @@
 {
-  "name": "Robin CNS Operator",
-  "description": "Robin CNS Operator",
+  "name": "Robin Cloud Native Storage",
+  "description": "Robin Cloud Native Storage",
   "logo": "_images/RobinIo-logo-3.png",
   "has_supporting_content": true,
   "stack_id": "RobinIo-operator",
