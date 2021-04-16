@@ -733,8 +733,12 @@ robin app info movies-bkp --status
 Lets verify the contents of the postgreSQL database app.
 
 ```
-export POSTGRES_PASSWORD=$(kubectl get secret movies-bkp-movies-postgresql -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
+export POSTGRES_PASSWORD=$(kubectl get secret movies-bkp-movies-postgresql -n demo -o jsonpath="{.data.postgresql-password}" | base64 --decode;)
 ```
+```
+export IP_ADDRESS=$(kubectl get svc movies-bkp-movies-postgresql -n demo -o jsonpath={.spec.clusterIP})
+```
+
 Connect to “testdb” and check record and you should see an output similar to the following, with all 9 movies present:
 
 
