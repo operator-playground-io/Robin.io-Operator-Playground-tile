@@ -40,6 +40,16 @@ You should see an output similar to the following.
 movies-postgresql            ClusterIP   10.100.187.49   <none>        5432/TCP   3m29s
 movies-postgresql-headless   ClusterIP   None            <none>        5432/TCP   3m29s
 ```
+make sure pod is up and running for pgsql
+
+```execute
+kubectl get pod -n demo
+```
+
+```
+NAME                  READY   STATUS    RESTARTS   AGE
+movies-postgresql-0   1/1     Running   0          33s
+```
 
 
 ###Add sample data to the PostgreSQL database
