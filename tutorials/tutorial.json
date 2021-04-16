@@ -27,5 +27,10 @@
 
    ],
    "support": [
+	   {
+        "title":"Robin CNS Support",
+ 	"description":"Robin CNS Support",
+ 	"url":"https://slack.robin.io/"
+      }
    ]
 }
