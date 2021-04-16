@@ -266,6 +266,7 @@ Now, let’s rollback to the point where we had 9 movies :
 ```
 robin app restore movies --snapshotid SNAPSHOT_ID_HERE --wait 
 ```
+Restore operation would take a minute so please wait. 
 You should see an output similar to the following:
 
 ```
@@ -648,7 +649,7 @@ We will now use our backed-up snapshot on S3 to restore data we just lost.
 Now let’s restore snapshot from the backup in cloud and rollback our application to that snapshot via the following command:
 
 ```
-robin app restore movies --backupid Your_Backup_ID --wait`
+robin app restore movies --backupid Your_Backup_ID --wait
 ```
 You should see output similar to the following:
 
@@ -699,7 +700,7 @@ tt0933876 | 2018 | June 9                                | Horror
 
 As you can see, we can restore the database to a desired state in the event of data corruption. We simply pull the backup from the cloud and use it to restore the database.
 
-###Create PostgreSQL Database from the backup the backup on AWS S3
+###Create PostgreSQL Database from the backup on AWS S3
 
 Since we have taken backup of PostgreSQL database, we can create a new app using the backup and verify the data integrity of the postgreSQL database.
 
