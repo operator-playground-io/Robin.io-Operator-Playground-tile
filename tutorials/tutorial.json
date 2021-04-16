@@ -1,22 +1,22 @@
 {
-   "name":"RobinIo Operator Tutorial",
+   "name":"Robin CNS Operator Tutorial",
    "appLayout":"accordion",
    "appTheme":"g90",
    "footer":"footer.md",
    "tutorials":[
       
        {
-         "description":"Learn how to verify that the RobinIo Operator has been properly installed in the namespace.",
+         "description":"Learn how to verify that the Robin CNS Operator has been properly installed in the namespace.",
          "duration":"10 min",
          "tutorial_name":"RobinIo.md",
-         "title":"1. RobinIo installation guide"
+         "title":"1. Robin CNS installation guide"
       }
 	
    ],
    "usefulLinks":[
       {
          "title":"Robin CNS Operator",
-         "description":"RobinIo Operator",
+         "description":"Robin CNS Operator",
          "url":"get.robin.io"
       },
      {
