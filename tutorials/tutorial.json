@@ -26,5 +26,11 @@
       },
 
    ],
-   "support": []
+   "support": [
+   	{
+        "title":"Robin CNS Support",
+ 	"description":"Robin CNS Operator Support",
+ 	"url":"https://slack.robin.io/"
+      }
+   ]
 }
