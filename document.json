@@ -5,11 +5,11 @@
   "has_supporting_content": true,
   "stack_id": "RobinIo-operator",
   "type": "stack",
-  "categories": ["Database"],
+  "categories": ["Storage"],
   "platform": "Kubernetes",
   "cover": "cover.md",
   "meta": {
-    "Database": ["RobinIo"],
+    "Storage": ["RobinIo"],
     "Type":[
          "Operators"
       ],
