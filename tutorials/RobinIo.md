@@ -263,7 +263,7 @@ Snapshots:
 ```
 Now, let’s rollback to the point where we had 9 movies :
 
-```execute
+```
 robin app restore movies --snapshotid SNAPSHOT_ID_HERE --wait 
 ```
 You should see an output similar to the following:
