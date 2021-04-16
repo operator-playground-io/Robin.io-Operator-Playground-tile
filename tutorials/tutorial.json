@@ -15,10 +15,16 @@
    ],
    "usefulLinks":[
       {
-         "title":"RobinIo Operator",
+         "title":"Robin CNS Operator",
          "description":"RobinIo Operator",
-         "url":"https://operatorhub.io/operator/robin-operator"
-      }
+         "url":"get.robin.io"
+      },
+     {
+        "title":"Robin CNS Operator",
+ 	"description":"Robin CNS Operator",
+ 	"url":"docs.robin.io"
+      },
+
    ],
    "support": []
 }
