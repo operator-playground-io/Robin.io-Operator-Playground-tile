@@ -762,3 +762,65 @@ tt0933876 | 2018 | June 9                                | Horror
 ```
 
 
+###Robin CNS Operator cleanup
+
+Delete the robin app created from backup
+```execute
+robin app delete movies-bkp --wait --force -y
+```
+
+Delete the backup locally and on the Object store (AWS S3)
+```execute
+robin backup list
+```
+
+```
++----------------------------------+-------------+--------------+--------------------+--------+
+| Backup ID                        | Backup Name | Repo         | Snapshot Name      | State  |
++----------------------------------+-------------+--------------+--------------------+--------+
+| 2b70f6989e3811ebb936c5aad0c9fb12 | mybk1       | pgsqlbackups | movies_snap9movies | Pushed |
++----------------------------------+-------------+--------------+--------------------+--------+
+```
+run following command 
+```
+robin backup delete <Backup ID> --repo-purge --wait
+```
+
+Detach repo from the app and unregister that repo from the cluster
+
+```
+robin app detach-repo movies pgsqlbackups --wait
+```
+
+```
+robin repo unregister pgsqlbackups --wait
+```
+
+Unregister PGSQL Helm App from Robin
+```
+robin snapshot list
+```
+```
++----------------------------------+--------+----------+----------+--------------------+
+| Snapshot ID                      | State  | App Name | App Kind | Snapshot name      |
++----------------------------------+--------+----------+----------+--------------------+
+| 76d262829e1311eb9d413f04544a4cc9 | ONLINE | movies   | helm     | movies_snap9movies |
++----------------------------------+--------+----------+----------+--------------------+
+```
+
+
+```
+robin snapshot delete <Snapshot ID> --wait
+```
+
+
+```
+robin app unregister movies --wait
+```
+
+
+Now to delete the app, user can delete the 'demo' namespace
+
+```
+kubectl delete ns demo
+```
