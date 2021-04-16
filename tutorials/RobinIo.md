@@ -90,11 +90,6 @@ testdb    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 |
 
 For the purpose of this tutorial, let’s create a table named “movies”.
 
-```execute
-PGPASSWORD="$POSTGRES_PASSWORD" psql -h $IP_ADDRESS -U postgres -c "\c testdb"
-```
-You are now connected to database "testdb" as user "postgres".
-
 CREATE TABLE:
 
 ```execute
