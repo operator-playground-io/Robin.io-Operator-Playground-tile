@@ -705,7 +705,7 @@ As you can see, we can restore the database to a desired state in the event of d
 Since we have taken backup of PostgreSQL database, we can create a new app using the backup and verify the data integrity of the postgreSQL database.
 
 ```
-robin app create from-backup <app_name> <Your_backupID> --wait
+robin app create from-backup movies-bkp <BACKUP_ID> --namespace demo --wait
 ```
 
 ```
@@ -714,7 +714,9 @@ Job: 1093 Name: K8SApplicationCreate State: PREPARED        Error: 0
 Job: 1093 Name: K8SApplicationCreate State: AGENT_WAIT      Error: 0
 Job: 1093 Name: K8SApplicationCreate State: COMPLETED       Error: 0
 ```
-
+```execute
+robin app info movies-bkp --status
+```
 
 ```
 +-----------------------+---------------------------------------+--------+---------+
