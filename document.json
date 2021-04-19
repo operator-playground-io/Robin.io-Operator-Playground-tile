@@ -30,6 +30,7 @@
     }
 
 ],
+  "hideCommands" : true,
   "display": [
     {
       "name": "Developer Dashboard",
